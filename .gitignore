@@ -1,2 +1,3 @@
-/imagenet1k
+/imagenet-val
 /__pycache__
+/.venv

@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from timm.loss import LabelSmoothingCrossEntropy
 from tqdm import tqdm
+from Embedding_model import get_embedding_model
 
 def imagenet_validate(model, val_loader, device):
     
@@ -35,17 +36,14 @@ def imagenet_validate(model, val_loader, device):
     return top1_acc, top5_acc
 def main():
 
-    # Korištenje
-    model_name = "mobilevitv2_050.cvnets_in1k"
-    model = timm.create_model(model_name, pretrained=True, num_classes=1000)
+    model, device = get_embedding_model(numclasses=1000)
 
     # Transform + dataset
     data_config = timm.data.resolve_model_data_config(model)
     transform = timm.data.create_transform(**data_config)
-    dataset = datasets.ImageFolder("C:\\Dev\\Izborni_Projekt\\imagenet1k", transform=transform)
+    dataset = datasets.ImageFolder("C:\\Users\\matia\\Documents\\RiTeh\\5. semestar\\Izborni_Projekt\\Attempt_2\\MobileViT\\imagenet-val", transform=transform)
     loader = DataLoader(dataset, batch_size=16, num_workers=2)
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     top1, top5 = imagenet_validate(model, loader, device)
     print(f"Top-1: {top1:.2f}%, Top-5: {top5:.2f}%")
 
