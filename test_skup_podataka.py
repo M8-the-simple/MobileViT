@@ -13,10 +13,11 @@ import cv2
 import matplotlib.pyplot as plt
 from utils import get_embedding
 from imutils.video import FileVideoStream
+from imutils.video import FPS
 
 
 model, device = get_embedding_model()
-mtcnn = MTCNN(keep_all=True, device=device)
+mtcnn = MTCNN(keep_all=True, device=device, post_process=False, select_largest=False, min_face_size=40)
 transform = get_transform()
 
 
@@ -36,20 +37,21 @@ def recognize(emb_new, thr=0.85):
     else:
         return "Unknown", sim[idx]
 def validation_test():
-    for class_name in os.listdir("dataset/val"):
-        class_path = os.path.join("dataset/val", class_name)
-        if not os.path.isdir(class_path):
-            continue
-       
-        for i, img_name in enumerate(os.listdir(class_path)):
-            if img_name.lower().endswith((".png", ".jpg", ".jpeg")):
-                img_path = os.path.join(class_path, img_name)
-            try:
-                emb_new = get_embedding(img_path)
-                label, dist = recognize(emb_new, thr=0.7)
-                print(f"Osoba: {class_name} {img_name} Rezultat: {label} ({dist:.3f})")
-            except Exception as e:
-                print(f"Osoba: {class_name} {img_name} (face {i+1}), Error: {e}")
+    for dataset_path in ["dataset/random"]:
+        for class_name in os.listdir(dataset_path):
+            class_path = os.path.join(dataset_path, class_name)
+            if not os.path.isdir(class_path):
+                continue
+
+            for i, img_name in enumerate(os.listdir(class_path)):
+                if img_name.lower().endswith((".png", ".jpg", ".jpeg")):
+                    img_path = os.path.join(class_path, img_name)
+                try:
+                    emb_new = get_embedding(img_path)
+                    label, dist = recognize(emb_new, thr=0.7)
+                    print(f"{img_name};{class_name};{label};{dist:.3f}")
+                except Exception as e:
+                    print(f"Osoba: {class_name} {img_name} (face {i+1}), Error: {e}")
            
 def show_face():
     import matplotlib.pyplot as plt
@@ -93,19 +95,26 @@ def show_face():
 
 
 def test_intra_class():
-    mean_emb_path = "dataset_faces/train/Mathias"
-    test_embs = []
+    mean_emb_path = "dataset/train/Fabris"
     for face_paths in os.listdir(mean_emb_path):
         emb = get_embedding(os.path.join(mean_emb_path, face_paths))
-        test_embs.append(emb)
-    if len(test_embs) < 2:
-        print("Nedovoljno testnih slika za izračun sličnosti.")
-        return
-    mean_emb = np.mean(test_embs, axis=0)
-    face_test_path = "dataset/val/Mathias"
-    for face_path in os.listdir(face_test_path):
+        if emb is None:
+            continue
+        label, probability = recognize(emb, thr=0.7)
+        print(f"Testna slika: {face_paths}, Prepoznata osoba: {label}, Sličnost: {probability:.3f}")
+        
+def cross_similarity_test():
+    persons = ['Alison', 'Mathias', 'Dominik', 'Fabris']
+    for test_person in persons:
+        print(f"\n=== {test_person} test ===")
+        for img_name in os.listdir(f"dataset/train/{test_person}")[:5]:
+            emb = get_embedding(f"dataset/train/{test_person}/{img_name}")
+            sims = np.dot(mean_embs, emb)
+            best_match = mean_labels[np.argmax(sims)]
+            best_sim = np.max(sims)
+            print(f"{img_name}: {best_match} ({best_sim:.3f})")
+
         #crop_emb = get_embedding_from_crop(mtcnn(Image.open(os.path.join(face_test_path, face_path))))
-        print(f"Testna slika: {face_path}, Sličnost sa srednjom vrijednošću: {np.dot(mean_emb):.3f}")
 
 
 def get_embedding_from_crop(crop_bgr: np.ndarray) -> np.ndarray:
@@ -138,28 +147,27 @@ def facial_recognition():
     
     cap = FileVideoStream("output.avi").start()
     v_len = int(cap.stream.get(cv2.CAP_PROP_FRAME_COUNT))
+    #cap = cv2.VideoCapture(0)  # Koristi kameru
     frame_count = 0
     fps_text = ''
     text = ''
-    fps = 0
+    avg_detection = []
+    avg_embedding = []
     start_time = time.perf_counter()
-
+    fps_imutils = FPS().start()
+    fps = 0
 
     for _ in range(v_len):
         frame = cap.read()
-
-
         frame_count +=1
-
-
-        #if not ret:
-        #   break
+        if frame is None:
+          continue
 
         before_detection = time.perf_counter()
         faces, probs = mtcnn.detect(frame)
         after_detection = time.perf_counter()
 
-        print(f"Faces: {faces.shape}")
+        #print(f"Faces: {faces.shape}")
 
         if faces is not None:
             for face, p in zip(faces, probs):
@@ -203,18 +211,20 @@ def facial_recognition():
                 after_draw = time.perf_counter()
                 detection = after_detection - before_detection
                 embedding = after_embedding - before_embedding
+                avg_detection.append(detection)
+                avg_embedding.append(embedding)
                 recognition = after_recognition - before_recognition
                 draw = after_draw - before_draw
 
                 
 
-
+        fps_imutils.update()
         fps_text = f"FPS: {fps:.1f}"
         if frame_count % 30 == 0:
             now = time.perf_counter()
             elapsed = now - start_time
+            fps = 30 / elapsed
             print(f"Vrijeme detekcije: {detection*1000:.1f} ms, Vrijeme embeddinga: {embedding*1000:.1f} ms, Vrijeme prepoznavanja: {recognition*1000:.1f} ms, Vrijeme crtanja: {draw*1000:.1f} ms, Sveukupno: {elapsed*1000/30:.1f} ms")
-            fps = 30.0 / elapsed
             start_time = now
 
 
@@ -230,11 +240,16 @@ def facial_recognition():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
    
+    fps_imutils.stop()
     cv2.destroyAllWindows()
+    print("Prosječni FPS: {:.1f}".format(fps_imutils.fps()))
+    print(f"Prosječno vrijeme detekcije lica : {np.mean(avg_detection)*1000:.1f} ms")
+    print(f"Prosječno vrijeme embeddinga : {np.mean(avg_embedding)*1000:.1f} ms")
 
 
 if __name__ == "__main__":
     #test_intra_class()
+    #cross_similarity_test()
     #same_picture_two_methods()
     #show_face()
     #main()
