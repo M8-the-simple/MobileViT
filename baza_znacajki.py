@@ -9,6 +9,7 @@ from facenet_pytorch import MTCNN
 from utils import get_embedding
 
 model, device = get_embedding_model()
+mtcnn = MTCNN(keep_all=True, device=device, post_process=False, select_largest=False, min_face_size=40)
 
 transform = get_transform()
 face_centroids = {}
@@ -20,7 +21,9 @@ for class_name in os.listdir("dataset/train"):
     embs = []
     for img_name in os.listdir(class_path):
         img_path = os.path.join(class_path, img_name)
-        emb = get_embedding(img_path)
+        emb = get_embedding(img_path, mtcnn=mtcnn, transform=transform, model=model, device=device)
+        if emb is None:
+            continue
         print(f"{np.linalg.norm(emb):.4f}")
         embs.append(emb)
     
@@ -34,5 +37,5 @@ print(f"Centoridski vektori: {len(face_centroids)} osoba")
 mean_embs = np.stack(list(face_centroids.values()), axis=0)
 mean_labels = np.array(list(face_centroids.keys()))
 
-#np.save("centroid_znacajke.npy", mean_embs)
-#np.save("oznake.npy", mean_labels)
+np.save("centroid_znacajke.npy", mean_embs)
+np.save("oznake.npy", mean_labels)
