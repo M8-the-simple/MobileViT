@@ -7,11 +7,28 @@ import torch
 import os
 
 
-model, device = get_embedding_model()
-transform = get_transform()
-mtcnn = MTCNN(keep_all=True, device=device)
+_DEFAULT_MODEL = None
+_DEFAULT_DEVICE = None
+_DEFAULT_TRANSFORM = None
+_DEFAULT_MTCNN = None
 
-def detect_and_crop(img, min_confidence=0.7):
+
+def _get_defaults():
+    global _DEFAULT_MODEL, _DEFAULT_DEVICE, _DEFAULT_TRANSFORM, _DEFAULT_MTCNN
+
+    if _DEFAULT_MODEL is None or _DEFAULT_DEVICE is None:
+        _DEFAULT_MODEL, _DEFAULT_DEVICE = get_embedding_model()
+    if _DEFAULT_TRANSFORM is None:
+        _DEFAULT_TRANSFORM = get_transform()
+    if _DEFAULT_MTCNN is None:
+        _DEFAULT_MTCNN = MTCNN(keep_all=True, device=_DEFAULT_DEVICE)
+
+    return _DEFAULT_MODEL, _DEFAULT_DEVICE, _DEFAULT_TRANSFORM, _DEFAULT_MTCNN
+
+def detect_and_crop(img, min_confidence=0.7, mtcnn=None):
+    if mtcnn is None:
+        _, _, _, mtcnn = _get_defaults()
+
     boxes, probs = mtcnn.detect(img)
     if boxes is not None and probs is not None:
                 
@@ -51,8 +68,16 @@ def get_embedding(image_input, mtcnn=None, transform=None, model=None, device=No
         image_input: path slike ili numpy array (BGR)
     """
     # Učitaj modele ako nisu proslijeđeni
-    if model is None or device is None:
-        model, device = get_embedding_model()
+    if model is None or device is None or mtcnn is None or transform is None:
+        default_model, default_device, default_transform, default_mtcnn = _get_defaults()
+        if model is None:
+            model = default_model
+        if device is None:
+            device = default_device
+        if transform is None:
+            transform = default_transform
+        if mtcnn is None:
+            mtcnn = default_mtcnn
     if mtcnn is None:
         mtcnn = MTCNN(keep_all=True, device=device)
     if transform is None:
@@ -68,7 +93,7 @@ def get_embedding(image_input, mtcnn=None, transform=None, model=None, device=No
     
     # Detektiraj i izreži lice
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    face_crop = detect_and_crop(img_rgb, min_confidence=0.7)
+    face_crop = detect_and_crop(img_rgb, min_confidence=0.7, mtcnn=mtcnn)
     
     if face_crop is None:
         print("Nije detektirano lice na slici")
