@@ -4,7 +4,8 @@ from PIL import Image
 import torch
 import os
 
-from Embedding_model import get_embedding_model, get_transform
+#from Embedding_model import get_embedding_model, get_transform
+from Embedding_model_insightface import get_embedding_model, get_transform
 from detectors import FaceDetector
 
 
@@ -51,21 +52,15 @@ def detect_and_crop(img: np.ndarray, min_confidence=0.9, detector=None):
 
 def get_embedding(image_input, detector=None, transform=None, model=None, device=None):
     """
-    Ekstrahiraj normalizirani embedding za lice na slici
-    
-    Args:
-        image_input: path slike (str) ili numpy array (BGR)
-        detector: FaceDetector instanca
+    Radi i sa starim timm modelima i sa InsightFace-om
     """
-    # Lazy load defaults
-    if model is None or device is None or transform is None or detector is None:
+    if model is None or device is None or detector is None:
         default_model, default_device, default_transform, default_detector = _get_defaults()
         model = model or default_model
         device = device or default_device
         transform = transform or default_transform
-        detector = detector or default_detector
 
-    # Učitaj sliku ako je proslijeđen path
+    # Učitaj sliku
     if isinstance(image_input, str):
         img = cv2.imread(image_input)
         if img is None:
@@ -73,24 +68,24 @@ def get_embedding(image_input, detector=None, transform=None, model=None, device
     else:
         img = image_input.copy()
 
-    # Detekcija + crop
-    face_crop = detect_and_crop(img, min_confidence=0.9, detector=detector)
+    # === INSIGHTFACE DETEKCIJA ===
+    if hasattr(model, 'app'):           # prepoznajemo InsightFace
+        faces = model.app.get(img)
+        if len(faces) == 0:
+            print("InsightFace: Nije detektirano lice")
+            return None
+        #print(faces[0].normed_embedding.astype(np.float32))
+        return faces[0].normed_embedding.astype(np.float32)
+
+    # === STARI TIMM PUT ===
+    # OVDJE TREBA BITI BGR ZBOG TOGA JER U DETECTOR-u se već radi pretvorba iz BGR u RGB
+    face_crop = detect_and_crop(img, min_confidence=0.7, detector=default_detector)
     
-    if face_crop is None or face_crop.size == 0:
+    if face_crop is None:
         print("Nije detektirano lice na slici")
         return None
-
-    face_rgb = cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB)
-    ## Pokušaj poboljšanja embeddinga
-    # Ovdje možeš probati koristiti INTER_LANCZOS4
-    # Ovdje možeš probati koristiti INTER_AREA
-    face_resized = cv2.resize(face_rgb, (224, 224), interpolation=cv2.INTER_AREA)
-    # cv2.imshow("image", face_resized)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    # Embedding
-    pil_img = Image.fromarray(face_resized)
+    
+    pil_img = Image.fromarray(face_crop)
     x = transform(pil_img).unsqueeze(0).to(device)
     
     with torch.no_grad():
@@ -105,3 +100,29 @@ def get_default_detector():
     """Koristno za ostale dijelove koda"""
     _, _, _, detector = _get_defaults()
     return detector
+
+def load_centroids(model):
+    """
+    Učitava centroidе i oznake za trenutni model.
+    Sprema ih u: centroids/{model.name}/
+    
+    Vraća:
+        mean_embs, mean_labels  ili (None, None) ako ne postoje
+    """
+    if not hasattr(model, 'name') or not model.name:
+        model.name = "default_model"   # fallback ako model nema .name
+
+    centroids_dir = os.path.join("centroids", model.name)
+    centroid_path = os.path.join(centroids_dir, "centroid_znacajke.npy")
+    labels_path   = os.path.join(centroids_dir, "oznake.npy")
+
+    if not os.path.exists(centroid_path) or not os.path.exists(labels_path):
+        print(f"⚠️  Centroidi za model '{model.name}' još nisu generirani!")
+        print(f"   Očekivana putanja: {centroid_path}")
+        return None, None
+
+    mean_embs = np.load(centroid_path)
+    mean_labels = np.load(labels_path)
+    
+    print(f"✅ Učitano {len(mean_labels)} centroida za model: {model.name}")
+    return mean_embs, mean_labels

@@ -52,12 +52,22 @@ def extract_faces_from_video(video_path: str, output_dir: str, interval=8, min_c
 
 
 if __name__ == "__main__":
-    timestamp = "165564"
-    video_path = rf"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\Mathias\video_Mathias_20260518_{timestamp}.mp4"
-    
-    extract_faces_from_video(
-        video_path=video_path,
-        output_dir=r"dataset\train\Mathias",
-        interval=6,       # svaki 6. frame (možeš povećati ako je video dug)
-        min_conf=0.98
-    )
+    # path_name = r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\Osobe" 
+    # for class_name in os.listdir(path_name):
+    #     class_path = os.path.join(path_name, class_name)
+
+    #     if not os.path.isdir(class_path):
+    #         print(f"Folder nije pronađen: {class_path}")
+    #         break
+
+    #     print(f"Započinjem ekstrackiju frame-ova za: {class_name}")
+        class_path=r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\Osobe\Antonio"
+        video_paths = [os.path.join(class_path, f) for f in os.listdir(class_path) 
+                    if f.lower().endswith((".mp4", ".avi"))]
+        for video_path in video_paths:
+            extract_faces_from_video(
+                video_path=video_path,
+                output_dir=rf"dataset\train\Antonio",
+                interval=2,       # svaki 6. frame (možeš povećati ako je video dug)
+                min_conf=0.98
+            )

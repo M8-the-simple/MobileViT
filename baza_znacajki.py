@@ -21,71 +21,77 @@ def get_augmentation_transform():
 
 
 def main():
-    #model, device = get_embedding_model()           # ako ti treba
+    model, device = get_embedding_model()           # ako ti treba
     detector = FaceDetector(method="mtcnn")
 
     aug_transform = get_augmentation_transform()
 
+    centroids_dir = os.path.join("centroids", model.name)
+    os.makedirs(centroids_dir, exist_ok=True)
+
     face_centroids = {}
-    class_name = "Mathias"
-    class_path = os.path.join("dataset", "train", class_name)
+    for class_name in os.listdir("dataset/train"):
+        class_path = os.path.join("dataset", "train", class_name)
 
-    if not os.path.isdir(class_path):
-        print(f"Folder nije pronađen: {class_path}")
-        return
+        if not os.path.isdir(class_path):
+            print(f"Folder nije pronađen: {class_path}")
+            return
 
-    image_paths = [os.path.join(class_path, f) for f in os.listdir(class_path) 
-                   if f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp"))]
+        image_paths = [os.path.join(class_path, f) for f in os.listdir(class_path) 
+                    if f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp"))]
 
-    print(f"Osoba {class_name}: {len(image_paths)} originalnih slika")
+        print(f"Osoba {class_name}: {len(image_paths)} originalnih slika")
 
-    embs = []
+        embs = []
 
-    for i, img_path in enumerate(image_paths):
-        # === ORIGINAL ===
-        emb = get_embedding(img_path, detector=detector)
-        if emb is not None:
-            embs.append(emb)
-            print(f"  Original {i+1:2d}: OK")
-        else:
-            print(f"  Original {i+1:2d}: nije detektirano lice")
+        for i, img_path in enumerate(image_paths):
+            # === ORIGINAL ===
+            emb = get_embedding(img_path, detector=detector, model=model)
+            if emb is not None:
+                embs.append(emb)
+                print(f"  Original {i+1:2d}: OK")
+            else:
+                print(f"  Original {i+1:2d}: nije detektirano lice")
 
-        # === AUGMENTACIJE (5 po slici) ===
-        # try:
-        #     img_pil = Image.open(img_path).convert('RGB')
-            
-        #     for aug_idx in range(5):
-        #         aug_pil = aug_transform(img_pil)
-        #         aug_np = np.array(aug_pil)                    # ovo je RGB
+            # === AUGMENTACIJE (5 po slici) ===
+            # try:
+            #     img_pil = Image.open(img_path).convert('RGB')
                 
-        #         # get_embedding obično očekuje BGR ili radi konverziju sam
-        #         emb_aug = get_embedding(aug_np, detector=detector)
-                
-        #         if emb_aug is not None:
-        #             embs.append(emb_aug)
-        # except Exception as e:
-        #     print(f"  Greška pri augmentaciji {img_path}: {e}")
+            #     for aug_idx in range(5):
+            #         aug_pil = aug_transform(img_pil)
+            #         aug_np = np.array(aug_pil)                    # ovo je RGB
+                    
+            #         # get_embedding obično očekuje BGR ili radi konverziju sam
+            #         emb_aug = get_embedding(aug_np, detector=detector)
+                    
+            #         if emb_aug is not None:
+            #             embs.append(emb_aug)
+            # except Exception as e:
+            #     print(f"  Greška pri augmentaciji {img_path}: {e}")
 
-    print(f"\nUkupno generirano embeddinga: {len(embs)}")
+        print(f"\nUkupno generirano embeddinga: {len(embs)}")
 
-    if len(embs) < 10:
-        print("UPOZORENJE: Premalo embeddinga za dobar centroid!")
-        return
+        if len(embs) < 10:
+            print("UPOZORENJE: Premalo embeddinga za dobar centroid!")
+            return
 
-    # Bolji centroid (manje osjetljiv na outliere)
-    embs = np.array(embs)
-    centroid = np.median(embs, axis=0)          # ← median je bolji od mean-a
-    
-    face_centroids[class_name] = centroid
+        # Bolji centroid (manje osjetljiv na outliere)
+        embs = np.array(embs)
+        centroid = np.median(embs, axis=0)          # ← median je bolji od mean-a
+        
+        face_centroids[class_name] = centroid
 
-    # Spremanje
-    mean_embs = np.stack(list(face_centroids.values()), axis=0)
-    mean_labels = np.array(list(face_centroids.keys()))
+        # Spremanje
+        mean_embs = np.stack(list(face_centroids.values()), axis=0)
+        mean_labels = np.array(list(face_centroids.keys()))
 
-    np.save("centroid_znacajke.npy", mean_embs)
-    np.save("oznake.npy", mean_labels)
-    
-    print(f"Centroid za {class_name} uspješno spremljen ({len(embs)} embeddinga)")
+        centroid_path = os.path.join(centroids_dir, "centroid_znacajke.npy")
+        label_path = os.path.join(centroids_dir, "oznake.npy")
+
+        np.save(centroid_path, mean_embs)
+        np.save(label_path, mean_labels)
+        
+        print(f"Centroid za {class_name} uspješno spremljen ({len(embs)} embeddinga) na {centroid_path}")
 
 
 if __name__ == "__main__":

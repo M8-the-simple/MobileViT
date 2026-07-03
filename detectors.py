@@ -35,8 +35,10 @@ class FaceDetector:
     def detect_and_crop(self, frame_bgr, min_confidence=0.5):
         if self.method == "mtcnn":
             boxes, probs = self.detect(frame_bgr)
+
             
             if boxes is None or probs is None or len(boxes) == 0:
+                print("[DEBUG] detektor nije pronašao nikakvo lice na slici")
                 return None
             
             # Filtriranje po confidence
@@ -44,6 +46,7 @@ class FaceDetector:
                     if p is not None and p >= min_confidence]
             
             if not valid:
+                print("Iako je pronađen bounding box, model nije siguran dali je to lice.")
                 return None
             
             # Uzmi najbolje lice
