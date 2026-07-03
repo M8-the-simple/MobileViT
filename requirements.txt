@@ -9,3 +9,6 @@ matplotlib
 imutils
 tqdm
 scikit-learn
+insightface
+pandas
+onnxruntime
