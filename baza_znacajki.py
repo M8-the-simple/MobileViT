@@ -4,7 +4,7 @@ import cv2
 from PIL import Image
 import torch
 from torchvision import transforms
-from Embedding_model import get_embedding_model 
+from models import get_embedding_model, get_transform, set_active_backend, get_detector
 
 from utils import get_embedding
 from detectors import FaceDetector   # pretpostavljam da imaš ovu klasu
@@ -21,12 +21,17 @@ def get_augmentation_transform():
 
 
 def main():
+
+    set_active_backend("hf_hub:gaunernst/vit_tiny_patch8_112.arcface_ms1mv3")  # ili "timm" za starije modele    
+
     model, device = get_embedding_model()           # ako ti treba
-    detector = FaceDetector(method="mtcnn")
+    detector = get_detector()                       # ako ti treba
 
     aug_transform = get_augmentation_transform()
 
+
     centroids_dir = os.path.join("centroids", model.name)
+    
     os.makedirs(centroids_dir, exist_ok=True)
 
     face_centroids = {}

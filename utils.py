@@ -4,10 +4,14 @@ from PIL import Image
 import torch
 import os
 
-#from Embedding_model import get_embedding_model, get_transform
-from Embedding_model_insightface import get_embedding_model, get_transform
-from detectors import FaceDetector
+from models import set_active_backend, get_embedding_model, get_transform, get_detector
 
+set_active_backend("hf_hub:gaunernst/vit_tiny_patch8_112.arcface_ms1mv3")  # ili "timm" za starije modele
+
+model, device = get_embedding_model()
+print("[DEBUG] Utils.py - aktivni model:", model.name)
+transform = get_transform()
+detector = get_detector()
 
 _DEFAULT_MODEL = None
 _DEFAULT_DEVICE = None
@@ -26,8 +30,7 @@ def _get_defaults():
         _DEFAULT_TRANSFORM = get_transform()
     
     if _DEFAULT_DETECTOR is None:
-        # Ovdje odaberi što želiš koristiti (promijeni po potrebi)
-        _DEFAULT_DETECTOR = FaceDetector(method="mtcnn")   # "haar" ili "mtcnn"
+        _DEFAULT_DETECTOR = get_detector()
     
     return _DEFAULT_MODEL, _DEFAULT_DEVICE, _DEFAULT_TRANSFORM, _DEFAULT_DETECTOR
 
@@ -79,11 +82,15 @@ def get_embedding(image_input, detector=None, transform=None, model=None, device
 
     # === STARI TIMM PUT ===
     # OVDJE TREBA BITI BGR ZBOG TOGA JER U DETECTOR-u se već radi pretvorba iz BGR u RGB
-    face_crop = detect_and_crop(img, min_confidence=0.7, detector=default_detector)
-    
+    if isinstance(image_input, str):
+        face_crop = detect_and_crop(img, min_confidence=0.7, detector=default_detector)
+    else:
+        face_crop = img
+
     if face_crop is None:
         print("Nije detektirano lice na slici")
         return None
+    #print(f"[INFO] Model: {model.name}")
     
     pil_img = Image.fromarray(face_crop)
     x = transform(pil_img).unsqueeze(0).to(device)
@@ -110,7 +117,7 @@ def load_centroids(model):
         mean_embs, mean_labels  ili (None, None) ako ne postoje
     """
     if not hasattr(model, 'name') or not model.name:
-        model.name = "default_model"   # fallback ako model nema .name
+        model.name = "buffalo_sc"   # fallback ako model nema .name
 
     centroids_dir = os.path.join("centroids", model.name)
     centroid_path = os.path.join(centroids_dir, "centroid_znacajke.npy")
@@ -124,5 +131,5 @@ def load_centroids(model):
     mean_embs = np.load(centroid_path)
     mean_labels = np.load(labels_path)
     
-    print(f"✅ Učitano {len(mean_labels)} centroida za model: {model.name}")
+    print(f"✅ {len(mean_labels)} centroida za model: {model.name}")
     return mean_embs, mean_labels

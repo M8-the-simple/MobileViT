@@ -1,7 +1,6 @@
 import time
 
-from Embedding_model_insightface import get_embedding_model, get_transform
-#from Embedding_model import get_embedding_model, get_transform
+from models import get_embedding_model, get_transform, get_detector
 from PIL import Image
 import os
 import torch
@@ -11,7 +10,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from utils import get_embedding, load_centroids
 from imutils.video import FPS, FileVideoStream
-from detectors import FaceDetector
 from tqdm import tqdm
 import random
 from metrics import RecognitionStats
@@ -21,24 +19,23 @@ from tests import intra_class_test, inter_class_test
 model, device = get_embedding_model()
 transform = get_transform()
 
-# === DETEKTOR (promijeni po potrebi) ===
-detector = FaceDetector(method="mtcnn")   # "haar" za RPi, "mtcnn" za jači stroj
+detector = get_detector()   # Unutar manager.py se odlučuje koji detektor se koristi
 
 mean_embs, mean_labels = load_centroids(model)
 
 
-def recognize(emb_new, thr: 0.85):
-
+def recognize(emb_new):
     from config import THRESHOLDS
 
     sim = np.dot(mean_embs, emb_new)
     idx = np.argmax(sim)
     if sim[idx] > THRESHOLDS[model.name][mean_labels[idx]]:
+        print("Unutar if-a")
         return mean_labels[idx], sim[idx]
     else:
         return "Unknown", sim[idx]
 
-def facial_recognition(thr=0.65):
+def facial_recognition():
     #cap = cv2.VideoCapture(0)  # Koristi kameru
     cap = cv2.VideoCapture("video_Matej_20260518_165925.mp4")  # za testiranje videa
     #cap = cv2.VideoCapture("video_Mathias_20260518_163440.mp4")  # za testiranje videa
@@ -88,10 +85,11 @@ def facial_recognition(thr=0.65):
                 continue
             try:
                 before_embedding = time.perf_counter()
-                emb_new = get_embedding(frame)   # ili get_embedding(face_crop)
+                emb_new = get_embedding(face_crop)   # ili get_embedding(face_crop)
                 after_embedding = time.perf_counter()
                 before_recognition = time.perf_counter()
-                label, dist = recognize(emb_new, thr=thr)
+                print("[DEBUG] Došli smo do try blocka")
+                label, dist = recognize(emb_new)
                 stats.update(label)
                 after_recognition = time.perf_counter()
                 text = f"{label} ({dist:.2f})"
@@ -103,9 +101,9 @@ def facial_recognition(thr=0.65):
                 recognition = 0
             # Crtanje
             before_draw = time.perf_counter()
-            #cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            #cv2.putText(frame, text, (x1, y1 - 10),
-            #            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, text, (x1, y1 - 10),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             after_draw = time.perf_counter()
             draw = after_draw - before_draw
             avg_detection.append(detection)
@@ -140,7 +138,7 @@ def facial_recognition(thr=0.65):
 
 def facial_recognition_insightface():
     #cap = cv2.VideoCapture(0)  # Koristi kameru
-    cap = cv2.VideoCapture(r"<path_to_video_file>")  # za testiranje videa
+    cap = cv2.VideoCapture("video_Matej_20260518_165925.mp4")  # za testiranje videa
     #cap = cv2.VideoCapture(r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\Osobe\Antonio\video_Antonio_20260518_184548.mp4")  # za testiranje videa
     
     frame_count = 0
@@ -257,4 +255,4 @@ def get_embedding_from_crop(crop_bgr: np.ndarray) -> np.ndarray:
 if __name__ == "__main__":
     #for person in os.listdir(r"dataset\train"):
     #   similarities = intra_class_test(person, thr=0.5, max_images=40, mean_embeddings=mean_embs, mean_labels=mean_labels)
-    facial_recognition_insightface()
+    facial_recognition()

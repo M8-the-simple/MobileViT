@@ -26,14 +26,14 @@ class InsightFaceWrapper:
             return None
         return faces[0].normed_embedding.astype(np.float32)  # već normaliziran
 
-def get_embedding_model(numclasses=0, name: str = "buffalo_sc"):
+def get_insightface_model(numclasses=0, name: str = "buffalo_sc"):
     """Sada vraća wrapper umjesto timm modela"""
     model = InsightFaceWrapper(name)
     model.name = name
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  # za kompatibilnost
     return model, device
 
-def get_transform():
+def get_insightface_transform():
     """InsightFace ne treba transform kao timm — ali da ne razbiješ ostali kod"""
     import torchvision.transforms as T
     # Minimalan transform koji radi s tvojim get_embedding funkcijama
