@@ -4,39 +4,27 @@ import cv2
 from PIL import Image
 import torch
 from torchvision import transforms
-from models import get_embedding_model, get_transform, set_active_backend, get_detector
-
-from utils import get_embedding
-from detectors import FaceDetector   # pretpostavljam da imaš ovu klasu
+from factory import ComponentFactory
+from config import get_config
 
 
-def get_augmentation_transform():
-    return transforms.Compose([
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation(degrees=10),
-        transforms.RandomAffine(degrees=0, translate=(0.08, 0.08), scale=(0.92, 1.08)),
-        transforms.ColorJitter(brightness=0.15, contrast=0.15, saturation=0.1),
-        transforms.RandomAdjustSharpness(sharpness_factor=1.8, p=0.4),
-    ])
 
+def main(): 
 
-def main():
-
-    set_active_backend("hf_hub:gaunernst/vit_tiny_patch8_112.arcface_ms1mv3")  # ili "timm" za starije modele    
-
-    model, device = get_embedding_model()           # ako ti treba
-    detector = get_detector()                       # ako ti treba
-
-    aug_transform = get_augmentation_transform()
-
-
-    centroids_dir = os.path.join("centroids", model.name)
+    cfg = get_config()
+    model = ComponentFactory.create_model()
+    preprocessor = ComponentFactory.create_preprocessor()
+    detector = ComponentFactory.create_detector()
+    # aug_transform = get_augmentation_transform()
+    centroids_dir = os.path.join("centroids", model.name.replace(":", "_").replace("/", "_"))
     
     os.makedirs(centroids_dir, exist_ok=True)
 
     face_centroids = {}
     for class_name in os.listdir("dataset/train"):
         class_path = os.path.join("dataset", "train", class_name)
+    # class_name = "Matija"
+    # class_path=rf"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\HaarCascade\MobileViT\dataset\train\Matija"
 
         if not os.path.isdir(class_path):
             print(f"Folder nije pronađen: {class_path}")
@@ -51,12 +39,27 @@ def main():
 
         for i, img_path in enumerate(image_paths):
             # === ORIGINAL ===
-            emb = get_embedding(img_path, detector=detector, model=model)
-            if emb is not None:
-                embs.append(emb)
-                print(f"  Original {i+1:2d}: OK")
-            else:
-                print(f"  Original {i+1:2d}: nije detektirano lice")
+            img = cv2.imread(img_path)
+            if img is None:
+                print(f"  Original {i+1:2d}: Greška pri učitavanju slike {img_path}")
+                continue
+            boxes, probs, landmarks = detector.detect(img)
+            faces = [(b, p, l) for b, p, l in zip(boxes, probs, landmarks)]
+            box, prob, land = max(faces, key=lambda x: x[1] if x[1] is not None else 0) if faces else (None, None, None)
+            if box is None:
+                print(f"  Original {i+1:2d}: Nije detektirano lice na slici {img_path}")
+                continue
+            for box, prob, land in zip(boxes, probs, landmarks):
+                if prob < 0.5:
+                    continue
+                preprocessed_img = preprocessor(img, landmarks=land)
+                emb = model.embed(preprocessed_img)
+                if emb is not None:
+                    embs.append(emb)
+                    print(f"  Original {i+1:2d}: OK")
+                else:
+                    print(f"  Original {i+1:2d}: nije detektirano lice")
+
 
             # === AUGMENTACIJE (5 po slici) ===
             # try:

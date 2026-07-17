@@ -1,0 +1,50 @@
+system:
+  backend: "ViT_Tiny"
+  frame_skip: 5
+  temporal_window: 5
+detector:
+    method: "mtcnn"             # or "haar"
+    mtcnn:
+      min_face_size: 40
+      thresholds: [0.6, 0.6, 0.7]
+      factor: 0.709
+      selection_method: "probability"
+    haar:
+      path: "haarcascade_frontalface_default.xml"
+      scale_factor: 1.1
+      min_neighbors: 5
+      min_size: 40
+
+preprocessing:
+    use_clahe: false
+    use_sharpen: false
+    use_alignment: true
+
+models:
+    ViT_Tiny:
+      name: "hf_hub:gaunernst/vit_tiny_patch8_112.arcface_ms1mv3"
+      thresholds:
+        Antonio: 0.45
+        David: 0.49
+        Ivor: 0.44
+        Matej: 0.49
+        Mathias: 0.42
+        Matija: 0.56
+        Paolo: 0.45
+      quantization:
+        enabled: true
+        
+        
+    ConvNeXt_Atto:
+      name: "hf_hub_gaunernst_convnext_atto.cosface_ms1mv3"
+      thresholds:
+        Antonio: 0.29
+        David: 0.27
+        Ivor: 0.28
+        Matej: 0.28
+        Mathias: 0.19
+        Matija: 0.33
+        Paolo : 0.32
+      quantization:
+        enabled: false
+        

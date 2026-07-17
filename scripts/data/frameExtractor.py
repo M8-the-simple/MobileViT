@@ -15,6 +15,7 @@ def extract_faces_from_video(video_path: str, output_dir: str, interval=8, min_c
         return
 
     output_path = Path(output_dir)
+    
     output_path.mkdir(parents=True, exist_ok=True)
 
     count = 0
@@ -52,22 +53,38 @@ def extract_faces_from_video(video_path: str, output_dir: str, interval=8, min_c
 
 
 if __name__ == "__main__":
-    # path_name = r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\Osobe" 
+    path_name = r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\HaarCascade\MobileViT\val_videos"
     # for class_name in os.listdir(path_name):
     #     class_path = os.path.join(path_name, class_name)
 
     #     if not os.path.isdir(class_path):
     #         print(f"Folder nije pronađen: {class_path}")
     #         break
+    for class_name in os.listdir(path_name):
+        class_path = os.path.join(path_name, class_name)
 
-    #     print(f"Započinjem ekstrackiju frame-ova za: {class_name}")
-        class_path=r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\Osobe\Antonio"
+        if not os.path.isdir(class_path):
+            print(f"Folder nije pronađen: {class_path}")
+            break
+        print(f"Započinjem ekstrackiju frame-ova za: {class_name}")
+        # class_path=r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\Osobe\Matija"
         video_paths = [os.path.join(class_path, f) for f in os.listdir(class_path) 
                     if f.lower().endswith((".mp4", ".avi"))]
+        if len(video_paths) == 0:
+            print(f"Nema video datoteka u folderu: {class_path}")
+            continue
+        output_dir = rf"dataset\val\{class_name}"
+        output_path = Path(output_dir)
+        if os.path.isdir(output_path):
+            if any(output_path.iterdir()):
+                print("Brišem stare frame-ove iz output direktorija...")
+                input("Jeste li sigurni?")
+                for file in output_path.iterdir():
+                    os.remove(file)  
         for video_path in video_paths:
             extract_faces_from_video(
-                video_path=video_path,
-                output_dir=rf"dataset\train\Antonio",
-                interval=2,       # svaki 6. frame (možeš povećati ako je video dug)
-                min_conf=0.98
-            )
+                    video_path=video_path,
+                    output_dir=output_dir,
+                    interval=4,       # svaki 6. frame (možeš povećati ako je video dug)
+                    min_conf=0.9
+                )

@@ -1,38 +1,51 @@
-THRESHOLDS = {
-    "buffalo_sc" : {
-        "Antonio" : 0.7,
-        "David" : 0.49,
-        "Fabris" : 0.46,
-        "Ivor" : 0.68,
-        "Mathias" : 0.57,
-        "Matija" : 0.77,
-        "Paolo" : 0.55
-    },
-    "mobilevitv2_050.cvnets_in1k" : {
-        "Antonio": 0.54,
-        "David" : 0.54,
-        "Fabris" : 0.3,
-        "Ivor" : 0.59,
-        "Mathias" : 0.35,
-        "Matija": 0.74,
-        "Paolo" : 0.47
-    },
-    "convnext_tiny" : {
-        "Antonio": 0.76,
-        "David" : 0.7,
-        "Fabris" : 0.58,
-        "Ivor" : 0.65,
-        "Mathias" : 0.67,
-        "Matija": 0.85,
-        "Paolo" : 0.7
-    },
-    "hf_hub_gaunernst_vit_tiny_patch8_112.arcface_ms1mv3" : {
-        "Antonio": 0.44,
-        "David" : 0.31,
-        "Fabris" : 0.32,
-        "Ivor" : 0.39,
-        "Mathias" : 0.31,
-        "Matija": 0.76,
-        "Paolo" : 0.4
-    }
-}
+# pipeline/config.py
+import yaml
+from pathlib import Path
+from functools import lru_cache
+from dataclasses import dataclass
+from typing import Dict, Any
+
+_config = None
+
+@dataclass
+class ModelConfig:
+    name: str
+    thresholds: Dict[str, float]
+    quantization: Dict[str, bool]  # Add quantization field with default value
+
+@dataclass
+class Config:
+    backend: str
+    frame_skip: int
+    temporal_window: int
+    detector_method: str
+    mtcnn_config: Dict[str, Any]
+    haar_config: Dict[str, Any]
+    preprocessing: Dict[str, bool]
+    models: Dict[str, ModelConfig]
+
+def load_config(path: str = "config.yaml") -> Config:
+    global _config
+    if _config is None:
+        with open(path) as f:
+            data = yaml.safe_load(f)
+
+        # Flatten structure
+        _config = Config(
+            backend=data['system']['backend'],
+            frame_skip=data['system']['frame_skip'],
+            temporal_window=data['system']['temporal_window'],
+            detector_method=data['detector']['method'],
+            mtcnn_config=data['detector']['mtcnn'],
+            haar_config=data['detector']['haar'],
+            preprocessing=data['preprocessing'],
+            models={
+                k: ModelConfig(name=v['name'], thresholds=v['thresholds'], quantization=v['quantization'])
+                for k, v in data['models'].items()
+            }
+        )
+    return _config
+
+@lru_cache()
+def get_config() -> Config:
+    return load_config()
