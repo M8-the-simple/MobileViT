@@ -1,9 +1,6 @@
 # --- Detection comparison / tracking ---
-import sys
-import os
 import torch
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from config import get_config
+from src import get_config
 
 class DetectionTracker:
     """Prati i uspoređuje detekcije između različitih detektora."""
@@ -14,21 +11,20 @@ class DetectionTracker:
         self.frames_processed = 0
         self.haar_total_time = 0.0
         self.mtcnn_total_time = 0.0
-        self.config = get_config()
 
-    def track_haar(self, frame_bgr):
+    def track_haar(self, frame_bgr, haar_cascade):
         """Detektira lice s Haar i vraća broj detekcija."""
         import cv2
         import time
 
-        haar_cascade = cv2.CascadeClassifier(self.config.haar_config["path"])
+        
         if haar_cascade.empty():
             raise IOError("Nije učitan Haar cascade!")
 
         gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
         start = time.perf_counter()
         faces = haar_cascade.detectMultiScale(
-            gray, scaleFactor=1.1, minNeighbors=5, minSize=(40, 40)
+            gray, scaleFactor=1.1, minNeighbors=2, minSize=(40, 40)
         )
         elapsed = time.perf_counter() - start
 
@@ -37,15 +33,14 @@ class DetectionTracker:
         self.haar_total_time += elapsed
         return len(boxes), boxes
 
-    def track_mtcnn(self, frame_bgr, device=None):
+    def track_mtcnn(self, frame_bgr, mtcnn, device=None):
         """Detektira lice s MTCNN i vraća broj detekcija."""
         import time
-        from facenet_pytorch import MTCNN
         import cv2
 
         device = "cuda" if torch.cuda.is_available() else "cpu" if device is None else device
 
-        mtcnn = MTCNN(keep_all=True, device=device)
+        
         frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
 
         start = time.perf_counter()
@@ -58,12 +53,12 @@ class DetectionTracker:
         self.mtcnn_total_time += elapsed
         return len(boxes), boxes
 
-    def compare_both(self, frame_bgr, device=None):
+    def compare_both(self, mtcnn, haar_cascade, frame_bgr, device=None):
         """Pokreće oba detektora i uspoređuje rezultate."""
         self.frames_processed += 1
 
-        haar_faces, haar_boxes = self.track_haar(frame_bgr)
-        mtcnn_faces, mtcnn_boxes = self.track_mtcnn(frame_bgr, device)
+        haar_faces, haar_boxes = self.track_haar(frame_bgr, haar_cascade)
+        mtcnn_faces, mtcnn_boxes = self.track_mtcnn(frame_bgr, mtcnn, device)
 
         return {
             "haar_count": haar_faces,
@@ -87,7 +82,7 @@ class DetectionTracker:
         print("="*50)
 
 
-def compare_detectors_on_video(video_path, max_frames=None, device=None):
+def compare_detectors_on_video(video_path, tracker, max_frames=None, device=None):
     """
     Uspoređuje Haar i MTCNN detekciju na videu.
 
@@ -100,9 +95,13 @@ def compare_detectors_on_video(video_path, max_frames=None, device=None):
         DetectionTracker objekt sa statistikama
     """
     import cv2
-
-    tracker = DetectionTracker()
+    from facenet_pytorch import MTCNN
+    
+    config = get_config()
     cap = cv2.VideoCapture(video_path)
+
+    mtcnn = MTCNN(keep_all=True, device=device, factor=0.6, thresholds=[0.6, 0.7, 0.7], min_face_size=40)
+    haar_cascade = cv2.CascadeClassifier(config.haar_config["path"])
 
     if not cap.isOpened():
         print(f"❌ Ne mogu otvoriti video: {video_path}")
@@ -114,7 +113,7 @@ def compare_detectors_on_video(video_path, max_frames=None, device=None):
         if not ret:
             break
 
-        tracker.compare_both(frame, device)
+        tracker.compare_both(mtcnn, haar_cascade, frame, device)
         frame_idx += 1
 
         if max_frames and frame_idx >= max_frames:
@@ -128,13 +127,14 @@ def compare_detectors_on_video(video_path, max_frames=None, device=None):
     return tracker
 
 if __name__ == "__main__":
-    # Primjer korištenja
     import os
-    videos_dir = r"val_videos"
+    tracker = DetectionTracker()
+    videos_dir = r"test_videos"
     for person in os.listdir(videos_dir):
         person_path = os.path.join(videos_dir, person)
         if not os.path.isdir(person_path):
             continue
         for video_path in os.listdir(person_path):
             print(f"\n[INFO] Usporedba detektora na videu: {video_path}")
-            compare_detectors_on_video(os.path.join(person_path, video_path), max_frames=300, device='cpu')
+            full_video_path = os.path.join(person_path, video_path)
+            compare_detectors_on_video(full_video_path, tracker, max_frames=300, device='cpu')

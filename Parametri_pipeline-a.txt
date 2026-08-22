@@ -45,7 +45,7 @@ dataset/
 │   ├── Mathias - 226 slika  
 │   ├── Matija - 55 slika     
 │   └── Paolo - 51 slika     
-├── val/
+├─── test/
 │   ├── Antonio - 8 slika
 │   ├── David - 34 slika          
 │   ├── Ivor - 11 slika         

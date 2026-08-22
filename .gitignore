@@ -1,4 +1,8 @@
 /imagenet-val
-/__pycache__
 /.venv
 /dataset
+/centroids/*
+/outputs/*
+test_videos/
+**/__pycache__/
+/evaluation/tests/similarities/*

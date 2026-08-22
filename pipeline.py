@@ -6,13 +6,7 @@ from dataclasses import dataclass
 import os
 import time
 
-from config import get_config
-from factory import ComponentFactory
-from core.detector import FaceDetector
-from core.model import EmbeddingModel
-from core.preprocessor import ImagePreprocessor
-from recognition.comparator import CentroidComparator
-from recognition.stats import RecognitionStats
+from src import get_config, FaceDetector, EmbeddingModel, ImagePreprocessor, CentroidComparator, ComponentFactory,  RecognitionStats
 
 @dataclass
 class FrameResult:
@@ -39,17 +33,18 @@ class FaceRecognitionPipeline:
         comparator: CentroidComparator
     ):
         self.model = model
+        self.fps_text = 0.0
         self.detector = detector
         self.preprocessor = preprocessor
         self.comparator = comparator
         self.config = get_config()
-        self.stats = RecognitionStats(self.config)
+        self.stats = RecognitionStats(self.config.temporal_window)
         self.frame_result = FrameResult(boxes=[], probs=np.array([]), landmarks=[], processed=None, embedding=None, label="Unknown", confidence=0.0)
 
     def process_frame(self, frame: np.ndarray, frame_idx: int, ground_truth: str = None) -> Optional[FrameResult]:
         """Process a single frame. Returns last result if no face detected."""
         # Only process every N frames
-        if frame_idx % self.config.frame_skip != 0 and frame_idx != 1:
+        if frame_idx % self.config.frame_skip != 0:
             return self.frame_result  # Return last result if skipping
 
         self.frame_result.boxes = []
@@ -80,7 +75,7 @@ class FaceRecognitionPipeline:
         # Recognize
         label, confidence = self.comparator.compare(embedding)
         if label is not None:
-            self.stats.update(label, ground_truth)
+            self.stats.update(embedding, label, ground_truth)
 
         self.frame_result = FrameResult(
             boxes=[box],
@@ -110,14 +105,24 @@ class FaceRecognitionPipeline:
             ret, frame = cap.read()
             if not ret:
                 if frame_idx != 0:
-                    print(f"Prosječni FPS: {frame_idx / (time.perf_counter() - start_video):.2f}")
+                    if show:
+                        print(f"Prosječni FPS: {self.fps_text:.2f}")
+                    else:
+                        print(f"Prosječni FPS: {frame_idx / (time.perf_counter() - start_video):.2f}")
                 break
 
             frame_idx += 1
+            fps = frame_idx / (time.perf_counter() - start_video)
             result = self.process_frame(frame, frame_idx, ground_truth)
             
+            if len(self.stats.system_embedding) > 0:
+                emb = self.stats.system_embedding
+                label, confidence = self.comparator.compare(emb)
+
+                self.stats._make_system_decision(label, ground_truth)
+
             if show and result is not None:
-                self._draw_result(frame, result)
+                self._draw_result(frame, result, frame_idx, fps)
 
             if show:
                 cv2.imshow("Face Recognition", frame)
@@ -129,15 +134,20 @@ class FaceRecognitionPipeline:
             cv2.destroyAllWindows()
         self.stats.print_report()
 
-    def _draw_result(self, frame, result):
+    def _draw_result(self, frame, result, frame_idx, fps):
         if result.boxes:
             x1, y1, x2, y2 = result.boxes[0]
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             text = f"{result.label} ({result.confidence:.2f})"
             cv2.putText(frame, text, (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-        cv2.putText(frame, f"{self.stats.get_system_recognized_person()}", (10, 30),
+        cv2.putText(frame, f"{self.stats.get_system_recognized_person()}", (10, 60),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        if frame_idx % 5 == 0:
+            self.fps_text = fps
+        cv2.putText(frame, f"FPS: {self.fps_text:.0f}", (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            
 
 
 # === ENTRY POINT ===
@@ -150,7 +160,7 @@ def create_pipeline() -> FaceRecognitionPipeline:
     preprocessor = ComponentFactory.create_preprocessor()
 
     # Load centroids
-    centroids_path = f"centroids/{cfg.models[cfg.backend].name.replace(':', '_').replace('/', '_')}"
+    centroids_path = f"centroids/{model.name}"
     embeddings = np.load(f"{centroids_path}/centroid_znacajke.npy")
     labels = np.load(f"{centroids_path}/oznake.npy")
     thresholds = cfg.models[cfg.backend].thresholds
@@ -161,14 +171,15 @@ def create_pipeline() -> FaceRecognitionPipeline:
 
 
 if __name__ == "__main__":
-    # videos_path = r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\HaarCascade\MobileViT\val_videos"
-    # for person_folder in os.listdir(videos_path):
-    #     person_path = os.path.join(videos_path, person_folder)
-    #     if os.path.isdir(person_path):
-    #         for video_file in os.listdir(person_path):
-    #             if video_file.lower().endswith(('.mp4', '.avi', '.mov')):
-    #                 video_path = os.path.join(person_path, video_file)
-    #                 print(f"Processing video: {video_path}")
-    pipeline = create_pipeline()
-    pipeline.run_video(0)  # Camera, or: pipeline.run_video("video.mp4")
+    videos_path = r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\HaarCascade\MobileViT\test_videos"
     
+    for person_folder in os.listdir(videos_path):
+        person_path = os.path.join(videos_path, person_folder)
+        if os.path.isdir(person_path):
+            for video_file in os.listdir(person_path):
+                if video_file.lower().endswith(('.mp4', '.avi', '.mov')):
+                    video_path = os.path.join(person_path, video_file)
+                    print(f"Processing video: {video_path}")
+                    pipeline = create_pipeline()    
+                    pipeline.run_video(video_path, person_folder, show=True)  # Camera, or: pipeline.run_video("video.mp4")
+                        
