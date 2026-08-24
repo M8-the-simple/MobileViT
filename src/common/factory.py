@@ -8,31 +8,13 @@ class ComponentFactory:
 
     @staticmethod
     def create_model():
-        # import torch
-        # def check_quantized(model):
-        #     quantized = 0
-        #     total = 0
-        #     for name, module in model.named_modules():
-        #         if isinstance(module, torch.nn.Linear):
-        #             total += 1
-        #             w = module.weight
-        #             t = str(type(w))
-        #             if "Quantized" in t or "Int8" in t or "Affine" in t or "int8" in t.lower():
-        #                 quantized += 1
-        #                 print(f"  [KVANTIZIRANO] {name}: {type(w)}")
-        #             else:
-        #                 print(f"  [NIJE] {name}: {type(w)} dtype={getattr(w, 'dtype', None)}")
-        #     print(f"Kvantizirano Linear slojeva: {quantized}/{total}")
+        
         cfg = get_config()
         model_cfg = cfg.models[cfg.backend]
         model = EmbeddingModel(model_cfg.name)
-        # Upotreba:
-        #print("=== PRIJE ===")
-        #check_quantized(model.model)
+        
         if model_cfg.quantization.get("enabled", False):
              model.quantize()   
-        #print("\n=== POSLIJE ===")
-        #check_quantized(model.model)
         return model
 
     @staticmethod

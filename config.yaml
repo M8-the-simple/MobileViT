@@ -52,7 +52,6 @@ models:
     InsightFace:
       name: "buffalo_sc"
       thresholds:
-        
       quantization:
         enabled: false
       input_size: 512

@@ -298,6 +298,12 @@ def main(person: Optional[str] = None) -> None:
 if __name__ == "__main__":
     import argparse
 
+    cfg = get_config()
+
+    if not os.path.exists(cfg.dataset_path):
+        print(f"Error: Dataset path does not exist: {cfg.dataset_path}, please run data/extract_frames.py first.")
+        exit(1)
+
     parser = argparse.ArgumentParser(description='Centroid generation script for face embeddings.')
     parser.add_argument('person', nargs='?', help='Optional: the option for creating a centroid for a specific person (folder name).')
     args = parser.parse_args()
