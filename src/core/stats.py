@@ -167,5 +167,12 @@ class RecognitionStats:
         print(f"  FAR (system): {system_metrics['FAR_system_%']}%")
         print(f"  FRR (system): {system_metrics['FRR_system_%']}%")
         
-        print(f"\nProsječno vrijeme detekcije : {np.mean(self.detection_times)*1000:.2f} ms" if len(self.detection_times) > 0 else print("Korišten InsightFace backend, detekcija nije mjerena."))
-        print(f"Prosječno vrijeme embeddinga: {np.mean(self.embedding_times)*1000:.2f if self.embedding_times else 0} ms")
+        avg_detection_time = np.mean(self.detection_times)*1000 if len(self.detection_times) > 0 else 0
+        avg_embedding_time = np.mean(self.embedding_times)*1000 if len(self.embedding_times) > 0 else 0
+
+        if avg_detection_time == 0:
+            print(f"\nKorišten je InsightFace backend, nema vremena detekcije.")
+            print(f"Prosječno vrijeme izračuna embeddinga: {avg_embedding_time:.2f} ms")
+        else:
+            print(f"\nProsječno vrijeme detekcije: {avg_detection_time:.2f} ms")
+            print(f"Prosječno vrijeme izračuna embeddinga: {avg_embedding_time:.2f} ms")

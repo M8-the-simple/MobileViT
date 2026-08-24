@@ -250,13 +250,13 @@ def main(person: Optional[str] = None) -> None:
     centroids = {}
     if person is not None:
         centroid_file = os.path.join(centroids_dir, "centroid_znacajke.npy")
-            labels_file = os.path.join(centroids_dir, "oznake.npy")
-            if os.path.exists(centroid_file) and os.path.exists(labels_file):
-                prev_centroids = np.load(centroid_file, allow_pickle=True)
-                prev_labels = np.load(labels_file, allow_pickle=True)
-                for label, centroid in zip(prev_labels, prev_centroids):
-                    centroids[label] = centroid
-                print("Loaded existing centroids for other classes.")
+        labels_file = os.path.join(centroids_dir, "oznake.npy")
+        if os.path.exists(centroid_file) and os.path.exists(labels_file):
+            prev_centroids = np.load(centroid_file, allow_pickle=True)
+            prev_labels = np.load(labels_file, allow_pickle=True)
+            for label, centroid in zip(prev_labels, prev_centroids):
+                centroids[label] = centroid
+            print("Loaded existing centroids for other classes.")
     stats = {"success": 0, "skipped": 0, "failed": 0}
 
     for class_name in tqdm(class_names, desc="Building centroids", unit="person"):

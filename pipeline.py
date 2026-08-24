@@ -82,15 +82,11 @@ class FaceRecognitionPipeline:
 
             #EMBED
             embedding_start_time = time.perf_counter()
-            if self.model.name.startswith("buffalo_sc"):
-                processed = None
-                embedding = self.model.embed(frame)
-            else:
-                processed = self.preprocessor(frame, land)
-                if processed is None:
-                    return self.frame_result  # Preprocessing failed, return last result 
-                embedding = self.model.embed(processed)
-        
+            processed = self.preprocessor(frame, land)
+            if processed is None:
+                return self.frame_result  # Preprocessing failed, return last result 
+            embedding = self.model.embed(processed)
+    
         self.stats.add_embedding_time(time.perf_counter() - embedding_start_time)
 
         # Recognize
