@@ -1,0 +1,59 @@
+system:
+  backend: "ViT_Tiny"          # or "ViT_Tiny"
+  frame_skip: 5
+  temporal_window: 5
+  centroid_path: "centroids"
+  dataset_path: "dataset"
+  train_videos_path: "train_videos"
+  test_videos_path: "test_videos"
+  similarities_path: "evaluation/tests/similarities"
+detector:
+    method: "mtcnn"             # or "haar"
+    mtcnn:
+      min_face_size: 40
+      thresholds: [0.6, 0.6, 0.7]
+      factor: 0.6
+      selection_method: "probability"
+    haar:
+      path: "src/haarcascade_frontalface_default.xml"
+      scale_factor: 1.1
+      min_neighbors: 4
+      min_size: [40,40]
+
+preprocessing:
+    use_clahe: false
+    use_sharpen: false
+    use_alignment: true
+
+models:
+    ViT_Tiny:
+      name: "hf_hub:gaunernst/vit_tiny_patch8_112.arcface_ms1mv3"
+      thresholds:
+      quantization:
+        enabled: true
+      input_size: 112
+        
+        
+    ConvNeXt:
+      name: "hf_hub:gaunernst/convnext_atto.cosface_ms1mv3"
+      thresholds:
+       
+      quantization:
+        enabled: false
+      input_size: 112
+
+    MobileViT:
+      name: "mobilevitv2_050.cvnets_in1k"
+      thresholds:
+        
+      quantization:
+        enabled: false
+      input_size: 256
+
+    InsightFace:
+      name: "buffalo_sc"
+      thresholds:
+      quantization:
+        enabled: false
+      input_size: 512
+        
