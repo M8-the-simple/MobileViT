@@ -21,9 +21,6 @@ class EmbeddingModel:
             self.model.eval()
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.model.to(self.device)
-
-            if not os.path.exists(f"{self.name}_state_dict.pt"):
-                torch.save(self.model.state_dict(), f"{self.name}_state_dict.pt")  # Save state dict for later use
             # Get transform from timm
             data_config = timm.data.resolve_data_config(self.model.pretrained_cfg)
             self.transform = timm.data.create_transform(**data_config, is_training=False)
@@ -40,8 +37,6 @@ class EmbeddingModel:
     def quantize(self, mode="int8_wo"):
         if mode == "int8_wo":
             quantize_(self.model, Int8WeightOnlyConfig())
-            if not os.path.exists(f"{self.name}_quantized.pt"):
-                torch.save(self.model.state_dict(), f"{self.name}_quantized.pt")  # Save quantized state dict for later use
             print("[INFO] Model je kvantiziran na int8")
         else:
             print(f"[INFO] Nepoznat način kvantizacije: {mode}. Model nije kvantiziran.")

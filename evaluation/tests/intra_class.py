@@ -34,7 +34,7 @@ def intra_class_test(person: str, max_images: int = 0,
     Returns:
         dict with keys: similarities, accuracy, correct, tested, elapsed_times
     """
-    threshold = thresholds.get(person, 0.5)
+    threshold = thresholds.get(person, 0.5) if thresholds else 0.5
 
     if mean_embeddings is None or mean_labels is None:
         mean_embeddings = embeddings

@@ -40,7 +40,7 @@ def extract_faces_from_video(video_path: str, output_dir: str, interval, min_con
                     best_prob = max(high_conf_probs)
 
                     filename = f"frame_{count:06d}_conf{best_prob:.4f}.jpg"
-                    #cv2.imwrite(str(output_path / filename), frame)  # ← cijeli frame
+                    cv2.imwrite(str(output_path / filename), frame)  # ← cijeli frame
 
                     saved_count += 1
 
@@ -109,6 +109,6 @@ if __name__ == "__main__":
             extract_faces_from_video(
                     video_path=video_path,
                     output_dir=output_dir,
-                    interval=4,
+                    interval=2,
                     min_conf=0.95
                 )

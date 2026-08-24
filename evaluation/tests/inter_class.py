@@ -70,7 +70,7 @@ def inter_class_test(test_person: str, reference_person: str, max_images: int = 
         max_images = len(images)
 
     # Use test_person's threshold
-    threshold = thresholds.get(test_person, 0.5)
+    threshold = thresholds.get(test_person, 0.5) if thresholds else 0.5
 
     similarities = []
     false_positives = 0

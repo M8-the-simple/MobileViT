@@ -119,31 +119,31 @@ def plot_roc_curve(y_true, y_score, person: str = None, save_path: str = None,
     """
     metrics = compute_roc_metrics(y_true, y_score)
 
-    fig, axes = plt.subplots(1, 1, figsize=(8, 6))
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
     # ROC Curve
-    # ax1 = axes[0]
-    # ax1.plot(metrics['fpr'], metrics['tpr'], color='darkorange', lw=2,
-    #          label=f'ROC curve (AUC = {metrics["roc_auc"]:.3f})')
-    # ax1.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', label='Random')
+    ax1 = axes[0]
+    ax1.plot(metrics['fpr'], metrics['tpr'], color='darkorange', lw=2,
+             label=f'ROC curve (AUC = {metrics["roc_auc"]:.3f})')
+    ax1.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', label='Random')
 
-    # #Mark EER point
-    # ax1.scatter(metrics['eer'], 1 - metrics['eer'], color='red', s=100,
-    #             zorder=5, label=f'EER = {metrics["eer"]:.3f}')
+    #Mark EER point
+    ax1.scatter(metrics['eer'], 1 - metrics['eer'], color='red', s=100,
+                zorder=5, label=f'EER = {metrics["eer"]:.3f}')
 
-    # ax1.set_xlim([-0.05, 1.0])
-    # ax1.set_ylim([0.0, 1.05])
-    # ax1.set_xlabel('False Positive Rate (FAR)', fontsize=12)
-    # ax1.set_ylabel('True Positive Rate (Sensitivity)', fontsize=12)
-    # title = f'{cfg.backend}'
-    # if person:
-    #     title += f' - {person} (AUC={metrics["roc_auc"]:.3f})'
-    # ax1.set_title(title, fontsize=14)
-    # ax1.legend(loc="lower right")
-    # ax1.grid(True, alpha=0.3)
+    ax1.set_xlim([-0.05, 1.0])
+    ax1.set_ylim([0.0, 1.05])
+    ax1.set_xlabel('False Positive Rate (FAR)', fontsize=12)
+    ax1.set_ylabel('True Positive Rate (Sensitivity)', fontsize=12)
+    title = f'{cfg.backend}'
+    if person:
+        title += f' - {person} (AUC={metrics["roc_auc"]:.3f})'
+    ax1.set_title(title, fontsize=14)
+    ax1.legend(loc="lower right")
+    ax1.grid(True, alpha=0.3)
 
     # Precision-Recall Curve
-    ax2 = axes
+    ax2 = axes[1]
     ax2.plot(metrics['recall'], metrics['precision'], color='green', lw=2,
              label=f'PR curve (AP = {metrics["avg_precision"]:.3f})')
     ax2.set_xlim([-0.05, 1.0])
