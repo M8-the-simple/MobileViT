@@ -223,7 +223,7 @@ Temporal analysis results for people with access:
 Temporal analysis results for people without access:
 
 | Class     |	FPS   |	Frame FRR % |	System FAR % |	Avg detection time (ms) |	Avg feature extraction time (ms) |
-|-----------|------ |---------------|----------------|--------------------------|----------------------------------|
+|:---------:|------ |---------------|----------------|--------------------------|----------------------------------|
 | Unknown 1	| 46.30	| 0	            | 0	             | 55.89	                  | 34.19                            |
 | Unknown 2	| 60.02	| 0	            | 0	             | 56.77	                  | 23.00                            |
 | Unknown 3	| 59.50	| 4.65	        | 0	             | 48.58	                  | 30.98                            |
