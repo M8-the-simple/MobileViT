@@ -183,6 +183,10 @@ if __name__ == "__main__":
                        help='Run temporal analysis on videos in test_videos/ folder')
     args = parser.parse_args()
 
+    if not os.path.exists(cfg.centroid_path):
+        print(f"Centroid path does not exist: {cfg.centroid_path}, please create centroids first using data/build_centroids.py")
+        exit(1)
+
     if args.test:
         test_videos_dir = cfg.test_videos_path
         for person in os.listdir(test_videos_dir):
