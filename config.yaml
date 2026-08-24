@@ -6,6 +6,7 @@ system:
   dataset_path: "dataset"
   train_videos_path: "train_videos"
   test_videos_path: "test_videos"
+  similarities_path: "evaluation/tests/similarities"
 detector:
     method: "mtcnn"             # or "haar"
     mtcnn:

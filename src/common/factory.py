@@ -14,7 +14,7 @@ class ComponentFactory:
         model = EmbeddingModel(model_cfg.name)
         
         if model_cfg.quantization.get("enabled", False):
-             model.quantize()   
+            model.quantize()   
         return model
 
     @staticmethod

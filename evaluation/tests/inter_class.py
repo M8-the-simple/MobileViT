@@ -18,7 +18,7 @@ preprocessor = ComponentFactory.create_preprocessor()
 
 # Load centroids
 model_name = model.name
-centroids_path = f"centroids/{model_name}"
+centroids_path = f"{config.centroid_path}/{model_name}"
 embeddings = np.load(f"{centroids_path}/centroid_znacajke.npy")
 labels = np.load(f"{centroids_path}/oznake.npy")
 thresholds = config.models[config.backend].thresholds
@@ -69,8 +69,8 @@ def inter_class_test(test_person: str, reference_person: str, max_images: int = 
     if max_images == 0:
         max_images = len(images)
 
-    # Use test_person's threshold
-    threshold = thresholds.get(test_person, 0.5) if thresholds else 0.5
+    # Use reference_person's threshold because we are comparing against their centroid
+    threshold = thresholds.get(reference_person, 0.5) if thresholds else 0.5
 
     similarities = []
     false_positives = 0

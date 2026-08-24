@@ -26,7 +26,7 @@ def load_labels(person: str, input_dir: str = None):
         tuple: (y_true, y_score) or (None, None) if not found
     """
     if input_dir is None:
-        input_dir = f"evaluation/tests/similarities/{person}"
+        input_dir = f"{cfg.similarities_path}/{person}"
 
     y_true_path = os.path.join(input_dir, "y_true.npy")
     y_score_path = os.path.join(input_dir, "y_score.npy")

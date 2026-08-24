@@ -24,7 +24,7 @@ preprocessor = ComponentFactory.create_preprocessor()
 
 # Load centroids
 model_name = model.name
-centroids_path = f"centroids/{model_name}"
+centroids_path = f"{config.centroid_path}/{model_name}"
 embeddings = np.load(f"{centroids_path}/centroid_znacajke.npy")
 labels = np.load(f"{centroids_path}/oznake.npy")
 

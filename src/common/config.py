@@ -23,6 +23,7 @@ class Config:
     dataset_path: str
     train_videos_path: str
     test_videos_path: str
+    similarities_path: str
     detector_method: str
     mtcnn_config: Dict[str, Any]
     haar_config: Dict[str, Any]
@@ -44,6 +45,7 @@ def load_config(path: str = "config.yaml") -> Config:
             temporal_window=data['system']['temporal_window'],
             centroid_path=data['system']['centroid_path'],
             dataset_path=data['system']['dataset_path'],
+            similarities_path=data['system']['similarities_path'],
             train_videos_path=data['system']['train_videos_path'],
             test_videos_path=data['system']['test_videos_path'],
             detector_method=data['detector']['method'],

@@ -8,13 +8,13 @@ class CentroidComparator:
         self.thresholds = thresholds
 
     def compare(self, embedding: np.ndarray) -> Tuple[str, float]:
-        """Compare embedding against all centroids."""
-        similarities = np.dot(self.embeddings, embedding)
-        idx = np.argmax(similarities)
-
-        label = self.labels[idx]
-        threshold = 0.5
-
-        if similarities[idx] >= threshold:
-            return label, float(similarities[idx])
-        return "Unknown", float(similarities[idx])
+         """Compare embedding against all centroids."""
+         if embedding is None:
+             return "Unknown", 0.0
+         similarities = np.dot(self.embeddings, embedding)
+         
+         idx = int(np.argmax(similarities))
+         label = self.labels[idx]
+         threshold = float(self.thresholds.get(label, 0.5)) if self.thresholds else 0.5
+         if similarities[idx] >= threshold:
+             return label, float(similarities[idx])

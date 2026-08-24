@@ -18,6 +18,15 @@ class FrameResult:
     label: str
     confidence: float
 
+    def clear(self):
+        self.boxes = []
+        self.probs = np.array([])
+        self.landmarks = []
+        self.processed = None
+        self.embedding = None
+        self.label = "Unknown"
+        self.confidence = 0.0
+
 
 class FaceRecognitionPipeline:
     """
@@ -48,28 +57,40 @@ class FaceRecognitionPipeline:
             return self.frame_result  # Return last result if skipping
 
         self.frame_result.boxes = []
-        # Detection
-        detection_start_time = time.perf_counter()
-        boxes, probs, landmarks = self.detector.detect(frame)
-        self.stats.add_detection_time(time.perf_counter() - detection_start_time)
+        box = None
 
-        if len(boxes) == 0:
-            return self.frame_result  # No face detected, return last result
+        if self.model.name.startswith("buffalo_sc"):
+            embedding_start_time = time.perf_counter()
+            # For InsightFace, we don't need preprocessing, just pass the frame directly
+            processed = None
+            embedding = self.model.embed(frame)  # Just to ensure embedding is computed for stats
+            if embedding is None:
+                return self.frame_result  # No face detected, return last result
+        else:
+            # Detection
+            detection_start_time = time.perf_counter()
+            boxes, probs, landmarks = self.detector.detect(frame)
+            self.stats.add_detection_time(time.perf_counter() - detection_start_time)
 
-        # Take highest confidence face
-        best_idx = np.argmax(probs) if len(probs) > 0 else 0
-        box = boxes[best_idx]
-        land = landmarks[best_idx] if len(landmarks) > 0 else None
+            if len(boxes) == 0:
+                return self.frame_result  # No face detected, return last result
 
+            # Take highest confidence face
+            best_idx = np.argmax(probs) if len(probs) > 0 else 0
+            box = boxes[best_idx]
+            land = landmarks[best_idx] if len(landmarks) > 0 else None
+
+            #EMBED
+            embedding_start_time = time.perf_counter()
+            if self.model.name.startswith("buffalo_sc"):
+                processed = None
+                embedding = self.model.embed(frame)
+            else:
+                processed = self.preprocessor(frame, land)
+                if processed is None:
+                    return self.frame_result  # Preprocessing failed, return last result 
+                embedding = self.model.embed(processed)
         
-        processed = self.preprocessor(frame, land)
-
-        if processed is None:
-            return self.frame_result  # Preprocessing failed, return last result
-
-        # Embed
-        embedding_start_time = time.perf_counter()
-        embedding = self.model.embed(processed)
         self.stats.add_embedding_time(time.perf_counter() - embedding_start_time)
 
         # Recognize
@@ -77,15 +98,18 @@ class FaceRecognitionPipeline:
         if label is not None:
             self.stats.update(embedding, label, ground_truth)
 
-        self.frame_result = FrameResult(
-            boxes=[box],
-            probs=probs,
-            landmarks=landmarks,
-            processed=processed,
-            embedding=embedding,
-            label=label,
-            confidence=confidence,
-        )
+        if box is not None:
+            self.frame_result = FrameResult(
+                boxes=[box],
+                probs=probs,
+                landmarks=landmarks,
+                processed=processed,
+                embedding=embedding,
+                label=label,
+                confidence=confidence,
+            )
+        else:
+            self.frame_result.clear()  # No box detected, return last result
 
         return self.frame_result
 
@@ -196,7 +220,7 @@ if __name__ == "__main__":
                     if video_file.endswith(('.mp4', '.avi', '.mov')):
                         video_path = os.path.join(person_path, video_file)
                         pipeline = create_pipeline()
-                    pipeline.run_video(video_path, ground_truth=person, show=False)
+                        pipeline.run_video(video_path, ground_truth=person, show=False)
     elif args.source is not None:
         pipeline = create_pipeline()
         pipeline.run_video(int(args.source), ground_truth=args.person, show=True)
