@@ -69,8 +69,10 @@ def generate_labels_for_person(person: str, max_images: int = 0,
         print(f"Generating NEGATIVES for {person}...")
         print(f"{'='*60}")
 
-    all_persons = [p for p in os.listdir("dataset/test")
-                   if os.path.isdir(os.path.join("dataset/test", p)) and p != person]
+    test_dataset_path = os.path.join(config.dataset_path, "test")
+
+    all_persons = [p for p in os.listdir(test_dataset_path)
+                   if os.path.isdir(os.path.join(test_dataset_path, p)) and p != person]
 
     negatives = []
 
@@ -143,8 +145,10 @@ def generate_all_labels(max_images: int = 0, output_base: str = None):
     """
     results = {}
 
-    all_persons = [p for p in os.listdir("dataset/test")
-                   if os.path.isdir(os.path.join("dataset/test", p))]
+    test_dataset_path = os.path.join(config.dataset_path, "test")
+
+    all_persons = [p for p in os.listdir(test_dataset_path)
+                   if os.path.isdir(os.path.join(test_dataset_path, p))]
 
     print(f"\n{'='*60}")
     print(f"GENERATING LABELS FOR ALL PERSONS")

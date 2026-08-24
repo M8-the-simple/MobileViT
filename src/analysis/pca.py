@@ -7,11 +7,11 @@ to visualize them in 2D. It can work with either:
 2. Pre-computed class centroids
 
 Usage:
-    python -m src.analysis.make_pca --help                    # Show help
-    python -m src.analysis.make_pca --mode faces             # PCA on test dataset faces
-    python -m src.analysis.make_pca --mode centroids          # PCA on class centroids
-    python -m src.analysis.make_pca --mode all --save        # Run both and save plots
-    python -m src.analysis.make_pca --mode faces --verbose   # More detailed output
+    python -m src.analysis.pca --help                    # Show help
+    python -m src.analysis.pca --mode faces             # PCA on test dataset faces
+    python -m src.analysis.pca --mode centroids          # PCA on class centroids
+    python -m src.analysis.pca --mode all --save        # Run both and save plots
+    python -m src.analysis.pca --mode faces --verbose   # More detailed output
 """
 
 import argparse
@@ -29,6 +29,7 @@ detector = ComponentFactory.create_detector()
 preprocessor = ComponentFactory.create_preprocessor()
 model = ComponentFactory.create_model()
 
+test_dataset_path = f"{cfg.dataset_path}/test"
 COLORS = ['red', 'green', 'blue', 'orange', 'purple', 'brown', 'pink', 'cyan', 'magenta']
 
 
@@ -230,7 +231,7 @@ def make_pca_plot(embeddings_2d: np.ndarray,
     ax.set_title(title, fontsize=14)
     ax.set_xlabel(xlabel, fontsize=12)
     ax.set_ylabel(ylabel, fontsize=12)
-    #ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
@@ -300,7 +301,7 @@ def create_pca_for_centroids(save: bool = False, verbose: bool = False) -> plt.F
     return fig
 
 
-def create_pca_for_faces(dataset_path: str = "dataset/test",
+def create_pca_for_faces(dataset_path: str = test_dataset_path,
                          save: bool = False,
                          verbose: bool = False) -> plt.Figure | None:
     """
@@ -406,8 +407,8 @@ Examples:
     parser.add_argument(
         '--dataset',
         type=str,
-        default='dataset/test',
-        help='Path to dataset directory (default: dataset/test)'
+        default=test_dataset_path,
+        help='Path to dataset directory'
     )
 
     parser.add_argument(

@@ -84,7 +84,7 @@ class RecognitionStats:
         """System-level odluka"""
         self.system_decisions += 1
         self.system_counter[person] += 1
-        self.system_recognized_person = self.system_counter.most_common(1)[0][0]
+        self.system_recognized_person = person
         self.system_embedding = []
 
         # Ovdje možeš dodati ground_truth za system-level FAR/FRR ako ga proslijediš

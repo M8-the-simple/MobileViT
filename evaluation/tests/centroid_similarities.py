@@ -2,7 +2,8 @@ import numpy as np
 import os
 from collections import Counter
 from evaluation.tests import get_embedding_from_image
-from src import ComponentFactory
+from src import ComponentFactory, get_config
+cfg = get_config()
 model = ComponentFactory.create_model()
 centroids_path = f"centroids/{model.name}"
 embeddings = np.load(os.path.join(centroids_path, "centroid_znacajke.npy"))
@@ -22,7 +23,9 @@ def similarity_to_centroid(person, centroid_embeddings=None, labels_arr=None):
         print("Osoba nije pronađena u bazi!")
         return
 
-    person_path = os.path.join("dataset/test", person)
+    test_dataset_path = os.path.join(cfg.dataset_path, "test")
+
+    person_path = os.path.join(test_dataset_path, person)
     if not os.path.exists(person_path):
         print(f"Nema direktorija: {person_path}")
         return
@@ -63,8 +66,9 @@ if __name__ == "__main__":
     all_self_similarities = []
     diff = []
 
-    for person in os.listdir("dataset/test"):
-        if os.path.isdir(os.path.join("dataset/test", person)):
+    dataset_path = cfg.dataset_path
+    for person in os.listdir(dataset_path):
+        if os.path.isdir(os.path.join(dataset_path, person)):
             s, ss = similarity_to_centroid(person)
             all_similarities.extend(s)
             all_self_similarities.extend(ss)

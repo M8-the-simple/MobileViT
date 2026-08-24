@@ -128,8 +128,10 @@ def compare_detectors_on_video(video_path, tracker, max_frames=None, device=None
 
 if __name__ == "__main__":
     import os
+    from src import get_config
+    cfg = get_config()
     tracker = DetectionTracker()
-    videos_dir = r"test_videos"
+    videos_dir = cfg.test_videos_path
     for person in os.listdir(videos_dir):
         person_path = os.path.join(videos_dir, person)
         if not os.path.isdir(person_path):

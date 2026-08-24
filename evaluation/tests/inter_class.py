@@ -56,7 +56,9 @@ def inter_class_test(test_person: str, reference_person: str, max_images: int = 
     # Use reference person's centroid
     centroid = mean_embeddings[reference_idx][0]
 
-    test_path = os.path.join("dataset/test", test_person)
+    test_dataset_path = os.path.join(config.dataset_path, "test")
+
+    test_path = os.path.join(test_dataset_path, test_person)
     if not os.path.exists(test_path):
         print(f"Directory not found: {test_path}")
         return None
@@ -134,8 +136,9 @@ def run_all_inter_class(test_person: str = None, max_images: int = 0, silent: bo
     """Run inter-class test for all person pairs or one person against all others."""
     results = {}
     similarities = []
-    all_persons = [p for p in os.listdir("dataset/test")
-                  if os.path.isdir(os.path.join("dataset/test", p))]
+    test_dataset_path = os.path.join(config.dataset_path, "test")
+    all_persons = [p for p in os.listdir(test_dataset_path)
+                  if os.path.isdir(os.path.join(test_dataset_path, p))]
 
     if test_person:
         # Test one person against all others

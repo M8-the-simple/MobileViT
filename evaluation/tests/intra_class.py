@@ -14,7 +14,7 @@ config = get_config()
 
 # Load centroids
 model_name = ComponentFactory.create_model().name
-centroids_path = f"centroids/{model_name}"
+centroids_path = f"{config.centroid_path}/{model_name}"
 embeddings = np.load(f"{centroids_path}/centroid_znacajke.npy")
 labels = np.load(f"{centroids_path}/oznake.npy")
 thresholds = config.models[config.backend].thresholds
@@ -47,7 +47,9 @@ def intra_class_test(person: str, max_images: int = 0,
 
     centroid = mean_embeddings[person_idx][0]
 
-    person_path = os.path.join("dataset/test", person)
+    test_dataset_path = os.path.join(config.dataset_path, "test")
+
+    person_path = os.path.join(test_dataset_path, person)
     if not os.path.exists(person_path):
         print(f"Directory not found: {person_path}")
         return None
@@ -122,8 +124,9 @@ def run_all_intra_class(max_images: int = 0, silent: bool = False):
     """Run intra-class test for all persons in test dataset."""
     results = {}
     similarities = []
-    for person in os.listdir("dataset/test"):
-        person_path = os.path.join("dataset/test", person)
+    test_dataset_path = os.path.join(config.dataset_path, "test")
+    for person in os.listdir(test_dataset_path):
+        person_path = os.path.join(test_dataset_path, person)
         if not os.path.isdir(person_path):
             continue
 

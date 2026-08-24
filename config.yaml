@@ -4,6 +4,8 @@ system:
   temporal_window: 5
   centroid_path: "centroids"
   dataset_path: "dataset"
+  train_videos_path: "train_videos"
+  test_videos_path: "test_videos"
 detector:
     method: "mtcnn"             # or "haar"
     mtcnn:
@@ -26,15 +28,8 @@ models:
     ViT_Tiny:
       name: "hf_hub:gaunernst/vit_tiny_patch8_112.arcface_ms1mv3"
       thresholds:
-        Antonio: 0.46
-        David: 0.5
-        Ivor: 0.44
-        Matej: 0.49
-        Mathias: 0.42
-        Matija: 0.62
-        Paolo: 0.46
       quantization:
-        enabled: false
+        enabled: true
       input_size: 112
         
         
@@ -49,7 +44,7 @@ models:
         Matija: 0.33
         Paolo : 0.32
       quantization:
-        enabled: true
+        enabled: false
       input_size: 112
 
     MobileViT:
@@ -78,5 +73,5 @@ models:
         Paolo: 0.45
       quantization:
         enabled: false
-      input_size: 256
+      input_size: 512
         

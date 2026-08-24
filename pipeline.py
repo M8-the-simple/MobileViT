@@ -160,7 +160,7 @@ def create_pipeline() -> FaceRecognitionPipeline:
     preprocessor = ComponentFactory.create_preprocessor()
 
     # Load centroids
-    centroids_path = f"centroids/{model.name}"
+    centroids_path = f"{cfg.centroid_path}/{model.name}"
     embeddings = np.load(f"{centroids_path}/centroid_znacajke.npy")
     labels = np.load(f"{centroids_path}/oznake.npy")
     thresholds = cfg.models[cfg.backend].thresholds
@@ -171,15 +171,35 @@ def create_pipeline() -> FaceRecognitionPipeline:
 
 
 if __name__ == "__main__":
-    videos_path = r"C:\Users\matia\Documents\RiTeh\6_semestar\Zavrsni_rad\HaarCascade\MobileViT\test_videos"
-    
-    for person_folder in os.listdir(videos_path):
-        person_path = os.path.join(videos_path, person_folder)
-        if os.path.isdir(person_path):
-            for video_file in os.listdir(person_path):
-                if video_file.lower().endswith(('.mp4', '.avi', '.mov')):
-                    video_path = os.path.join(person_path, video_file)
-                    print(f"Processing video: {video_path}")
-                    pipeline = create_pipeline()    
-                    pipeline.run_video(video_path, person_folder, show=True)  # Camera, or: pipeline.run_video("video.mp4")
+    import argparse
+    cfg = get_config()
+
+    parser = argparse.ArgumentParser(
+        description='Run temporal analysis or real-time face recognition on camera feed'
+    )
+    parser.add_argument('source', nargs='?', help='Camera index (int) for camera source.')
+    parser.add_argument('person', nargs='?', help='Ground truth for the person.')
+    parser.add_argument('--test', '-t', action='store_true',
+                       help='Run temporal analysis on videos in test_videos/ folder')
+    args = parser.parse_args()
+
+    if args.test:
+        test_videos_dir = cfg.test_videos_path
+        for person in os.listdir(test_videos_dir):
+            if os.path.isdir(os.path.join(test_videos_dir, person)):
+                person_path = os.path.join(test_videos_dir, person)
+                for video_file in os.listdir(person_path):
+                    if video_file.endswith(('.mp4', '.avi', '.mov')):
+                        video_path = os.path.join(person_path, video_file)
+                        pipeline = create_pipeline()
+                    pipeline.run_video(video_path, ground_truth=person, show=False)
+    elif args.source is not None:
+        pipeline = create_pipeline()
+        pipeline.run_video(int(args.source), ground_truth=args.person, show=True)
+        
+    # else:
+    #     print("Usage:")
+    #     print("  python -m evaluation.tests.generate_labels <person_name>")
+    #     print("  python -m evaluation.tests.generate_labels <person_name> --max 10")
+    #     print("  python -m evaluation.tests.generate_labels --all")
                         

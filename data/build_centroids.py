@@ -215,7 +215,7 @@ def main(person: Optional[str] = None) -> None:
 
     # Get paths from config with defaults
     dataset_path = cfg.dataset_path if hasattr(cfg, 'dataset_path') else "dataset"
-    centroid_path = cfg.centroid_path if hasattr(cfg, 'centroid_path') else "data/centroids"
+    centroid_path = cfg.centroid_path if hasattr(cfg, 'centroid_path') else "centroids"
     dataset_dir = os.path.join(dataset_path, "train")
     centroids_dir = os.path.join(centroid_path, model.name)
 
