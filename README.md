@@ -210,7 +210,7 @@ Since the goal of this project was to evaluate and integrate Transformer models 
 |0.9171|0.1355|0.7278|0.1365|
 
 Temporal analysis results for people with access:
-| Class   |	FPS    |	Frame FRR (%) |	System FRR (%) |	Avg detection time (ms) |	Avg feature extraction time (ms) |
+| Class   |	FPS    |	Frame FRR % |	System FRR % |	Avg detection time (ms) |	Avg feature extraction time (ms) |
 |---------|--------|----------------|----------------|--------------------------|----------------------------------|
 | Antonio	| 119.20 | 25.00          | 0	             | 26.31                    | 19.03                            |
 | David	  | 88.81	 | 13.80          | 0	             | 31	                      | 20.32                            |
@@ -222,7 +222,7 @@ Temporal analysis results for people with access:
 
 Temporal analysis results for people without access:
 
-| Class     |	FPS   |	Frame FAR (%) |	System FAR (%) |	Avg detection time (ms) |	Avg feature extraction time (ms) |
+| Class     |	FPS   |	Frame FRR % |	System FAR % |	Avg detection time (ms) |	Avg feature extraction time (ms) |
 |-----------|------ |---------------|----------------|--------------------------|----------------------------------|
 | Unknown 1	| 46.30	| 0	            | 0	             | 55.89	                  | 34.19                            |
 | Unknown 2	| 60.02	| 0	            | 0	             | 56.77	                  | 23.00                            |
